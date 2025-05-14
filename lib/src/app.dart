@@ -15,6 +15,7 @@ import 'package:flutter/foundation.dart';
 import 'features/shared/shared_page.dart';
 import 'features/calendar/calendar_overview_page.dart';
 import 'features/ai/ai_page.dart';
+import 'features/shared/invitations_page.dart';
 
 import 'models/user.dart';
 /// Notifier holding the current user; replaceable by real auth in future.
@@ -162,6 +163,19 @@ class _MainPageState extends ConsumerState<MainPage> {
                       Navigator.pop(context);
                     },
                   ),
+                  const Divider(),
+                  ListTile(
+                    leading: const Icon(Icons.mail_outline),
+                    title: const Text('Invitations'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const InvitationsPage(),
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -249,6 +263,18 @@ class _MainPageState extends ConsumerState<MainPage> {
                   leading: const Icon(Icons.person),
                   title: const Text('Profile'),
                   onTap: () => setState(() => _currentIndex = 6),
+                ),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.mail_outline),
+                  title: const Text('Invitations'),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const InvitationsPage(),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
