@@ -1,0 +1,36 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive/hive.dart';
+import '../../models/expense_item.dart';
+
+/// StateNotifier for managing expenses with Hive persistence.
+class ExpenseListNotifier extends StateNotifier<List<ExpenseItem>> {
+  final Box<ExpenseItem> _box;
+  ExpenseListNotifier()
+      : _box = Hive.box<ExpenseItem>('expenses'),
+        super(Hive.box<ExpenseItem>('expenses').values.toList());
+
+  /// Add a new expense for [date] with [amount] and [category].
+  void add(double amount, String category, {required DateTime date}) {
+    final id = DateTime.now().millisecondsSinceEpoch.toString();
+    final item = ExpenseItem(
+      id: id,
+      date: date,
+      amount: amount,
+      category: category,
+    );
+    _box.put(id, item);
+    state = [...state, item];
+  }
+
+  /// Remove an expense by [id].
+  void remove(String id) {
+    _box.delete(id);
+    state = state.where((e) => e.id != id).toList();
+  }
+}
+
+/// Provider exposing the list of expenses.
+final expenseListProvider =
+    StateNotifierProvider<ExpenseListNotifier, List<ExpenseItem>>(
+  (ref) => ExpenseListNotifier(),
+);

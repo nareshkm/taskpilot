@@ -7,6 +7,8 @@ class Task {
   final DateTime date;
   /// If true, this task repeats on every date
   final bool isRepetitive;
+  /// Owner of the task
+  final String ownerId;
 
   Task({
     required this.id,
@@ -14,6 +16,7 @@ class Task {
     this.completed = false,
     required this.date,
     this.isRepetitive = false,
+    required this.ownerId,
   });
 
   Task copyWith({
@@ -22,6 +25,7 @@ class Task {
     bool? completed,
     DateTime? date,
     bool? isRepetitive,
+    String? ownerId,
   }) {
     return Task(
       id: id ?? this.id,
@@ -29,6 +33,7 @@ class Task {
       completed: completed ?? this.completed,
       date: date ?? this.date,
       isRepetitive: isRepetitive ?? this.isRepetitive,
+      ownerId: ownerId ?? this.ownerId,
     );
   }
 }

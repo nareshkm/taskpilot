@@ -1,19 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
- import 'package:hive/hive.dart';
-import '../../services/notification_service.dart';
+import 'package:hive/hive.dart';
 import '../../models/task.dart';
 
-/// Provider for the currently selected date on the dashboard.
-final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
-
-/// StateNotifier managing the top priorities list with Hive persistence.
-class TopPrioritiesNotifier extends StateNotifier<List<Task>> {
+/// StateNotifier managing the personal to-do list with Hive persistence.
+class PersonalTodoListNotifier extends StateNotifier<List<Task>> {
   final Box<Task> _box;
-  TopPrioritiesNotifier()
-      : _box = Hive.box<Task>('priorities'),
-        super(Hive.box<Task>('priorities').values.toList());
+  PersonalTodoListNotifier()
+      : _box = Hive.box<Task>('personal_todos'),
+        super(Hive.box<Task>('personal_todos').values.toList());
 
-  /// Add a new priority task with [title], scheduled for [date], owned by [ownerId].
+  /// Add a personal task [title] scheduled for [date], owned by [ownerId].
   /// If [isRepetitive] is true, the task appears on every date.
   void add(
     String title, {
@@ -31,15 +27,11 @@ class TopPrioritiesNotifier extends StateNotifier<List<Task>> {
     );
     _box.put(id, task);
     state = [...state, task];
-    // Schedule reminder for priority task
-    NotificationService().scheduleTaskReminder(task);
   }
 
   void remove(String id) {
     _box.delete(id);
     state = state.where((t) => t.id != id).toList();
-    // Cancel scheduled reminder
-    NotificationService().cancelTaskReminder(id);
   }
 
   void toggleComplete(String id) {
@@ -65,8 +57,8 @@ class TopPrioritiesNotifier extends StateNotifier<List<Task>> {
   }
 }
 
-/// Provider exposing the list of top priorities.
-final topPrioritiesProvider =
-    StateNotifierProvider<TopPrioritiesNotifier, List<Task>>(
-  (ref) => TopPrioritiesNotifier(),
+/// Provider exposing the personal to-do list.
+final personalTodoListProvider =
+    StateNotifierProvider<PersonalTodoListNotifier, List<Task>>(
+  (ref) => PersonalTodoListNotifier(),
 );
