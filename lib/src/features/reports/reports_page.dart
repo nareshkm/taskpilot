@@ -66,7 +66,7 @@ class ReportsPage extends ConsumerWidget {
                       final idx = value.toInt();
                       if (idx < 0 || idx >= labels.length) return const SizedBox.shrink();
                       return SideTitleWidget(
-                        axisSide: meta.axisSide,
+                        meta: meta,
                         child: Text(labels[idx], style: Theme.of(context).textTheme.bodySmall),
                       );
                     },
@@ -99,7 +99,7 @@ class ReportsPage extends ConsumerWidget {
                       final labels = _buildExpenseLabels();
                       if (idx < 0 || idx >= labels.length) return const SizedBox.shrink();
                       return SideTitleWidget(
-                        axisSide: meta.axisSide,
+                        meta: meta,
                         child: Text(labels[idx], style: Theme.of(context).textTheme.bodySmall),
                       );
                     },

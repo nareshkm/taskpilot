@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 
 import '../../app.dart';
@@ -10,7 +9,6 @@ import '../../models/task.dart';
 import '../../providers/shared_data_provider.dart';
 import '../dashboard/todo_provider.dart';
 
-/// Page showing a calendar overview where users can pick dates and view tasks.
 class CalendarOverviewPage extends ConsumerStatefulWidget {
   const CalendarOverviewPage({Key? key}) : super(key: key);
 
@@ -19,14 +17,12 @@ class CalendarOverviewPage extends ConsumerStatefulWidget {
 }
 
 class _CalendarOverviewPageState extends ConsumerState<CalendarOverviewPage> {
-  late DateTime _focusedDay;
-  DateTime? _selectedDay;
+  DateTime _selectedDay = DateTime.now();
 
-  @override
-  void initState() {
-    super.initState();
-    _focusedDay = DateTime.now();
-    _selectedDay = _focusedDay;
+  List<DateTime> _getCurrentWeekDays() {
+    final today = DateTime.now();
+    final start = today.subtract(Duration(days: today.weekday % 7));
+    return List.generate(7, (index) => start.add(Duration(days: index)));
   }
 
   @override
@@ -34,11 +30,11 @@ class _CalendarOverviewPageState extends ConsumerState<CalendarOverviewPage> {
     final theme = Theme.of(context);
     final currentUser = ref.watch(currentUserProvider);
     final allTasks = ref.watch(todoListProvider);
-    // Tasks for selected day or repetitive
+
     final tasks = allTasks.where((t) {
-      final sameDay = t.date.year == _selectedDay!.year &&
-          t.date.month == _selectedDay!.month &&
-          t.date.day == _selectedDay!.day;
+      final sameDay = t.date.year == _selectedDay.year &&
+          t.date.month == _selectedDay.month &&
+          t.date.day == _selectedDay.day;
       return t.ownerId == currentUser.id && (sameDay || t.isRepetitive);
     }).toList();
 
@@ -48,82 +44,59 @@ class _CalendarOverviewPageState extends ConsumerState<CalendarOverviewPage> {
       ),
       body: Column(
         children: [
-          TableCalendar(
-            firstDay: DateTime.utc(2000, 1, 1),
-            lastDay: DateTime.utc(2100, 12, 31),
-            focusedDay: _focusedDay,
-            selectedDayPredicate: (day) => isSameDay(day, _selectedDay),
-            onDaySelected: (selected, focused) {
-              setState(() {
-                _selectedDay = selected;
-                _focusedDay = focused;
-              });
-            },
-            headerStyle: HeaderStyle(
-              formatButtonVisible: false,
-              titleCentered: true,
-              titleTextStyle: theme.textTheme.titleLarge!,
-            ),
-            calendarStyle: CalendarStyle(
-              isTodayHighlighted: true,
-              selectedDecoration: BoxDecoration(
-                  color: theme.colorScheme.primary, shape: BoxShape.circle),
-              todayDecoration: BoxDecoration(
-                  color: theme.colorScheme.secondary, shape: BoxShape.circle),
-              defaultTextStyle: theme.textTheme.bodyMedium!,
-              weekendTextStyle: theme.textTheme.bodyMedium!.copyWith(
-                  color: theme.colorScheme.error),
-              outsideDaysVisible: false,
-            ),
-            daysOfWeekStyle: DaysOfWeekStyle(
-              weekdayStyle: theme.textTheme.bodySmall!,
-              weekendStyle: theme.textTheme.bodySmall!.copyWith(
-                  color: theme.colorScheme.error),
-            ),
-          ),
+          _buildHorizontalDaySelector(theme),
           const SizedBox(height: 8),
           Expanded(
-            child: ListView.separated(
+            child: tasks.isEmpty
+                ? Center(child: Text('No tasks for selected day.', style: theme.textTheme.bodyMedium))
+                : ListView.separated(
               itemCount: tasks.length,
-              separatorBuilder: (ctx, i) => const Divider(height: 1),
-              itemBuilder: (ctx, i) {
-                final t = tasks[i];
-                return Container(
-                  color: i.isEven
-                      ? theme.colorScheme.surfaceVariant
-                      : theme.colorScheme.surface,
-                  child: ListTile(
-                    leading: Icon(
-                      t.completed ? Icons.check_circle : Icons.circle_outlined,
-                      color: t.completed
-                          ? theme.colorScheme.tertiary
-                          : theme.colorScheme.secondary,
-                    ),
-                    title: Text(
-                      t.title,
-                      style: t.completed
-                          ? theme.textTheme.bodyLarge!
-                              .copyWith(decoration: TextDecoration.lineThrough)
-                          : theme.textTheme.bodyLarge,
-                    ),
-                    subtitle: Text(
-                        DateFormat.jm().format(t.date) +
-                            (t.isRepetitive ? ' • Daily' : ''),
-                        style: theme.textTheme.bodySmall),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
+              separatorBuilder: (_, __) => Divider(
+                height: 1,
+                color: theme.colorScheme.onSurface.withOpacity(0.12),
+              ),
+              itemBuilder: (context, index) {
+                final t = tasks[index];
+                return GestureDetector(
+                  onTap: () {
+                    ref.read(todoListProvider.notifier).toggleComplete(t.id);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        IconButton(
-                          icon: const Icon(Icons.comment),
-                          onPressed: () => _showCommentsDialog(ctx: context, task: t),
+                        GestureDetector(
+                          onTap: () {
+                            ref.read(todoListProvider.notifier).toggleComplete(t.id);
+                          },
+                          child: Icon(
+                            t.completed ? Icons.check_box : Icons.check_box_outline_blank,
+                            color: t.completed ? theme.colorScheme.primary : Colors.grey,
+                          ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: () {},
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.visibility),
-                          onPressed: () {},
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                t.title,
+                                style: theme.textTheme.bodyLarge!.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  decoration: t.completed ? TextDecoration.lineThrough : TextDecoration.none,
+                                  color: t.completed ? Colors.grey : theme.colorScheme.onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                DateFormat.jm().format(t.date),
+                                style: theme.textTheme.bodySmall!.copyWith(
+                                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -134,84 +107,141 @@ class _CalendarOverviewPageState extends ConsumerState<CalendarOverviewPage> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showAddTaskDialog,
+        child: const Icon(Icons.add),
+        backgroundColor: theme.colorScheme.primary,
+        tooltip: 'Add Task',
+      ),
     );
   }
 
-  void _showCommentsDialog({
-    required BuildContext ctx,
-    required Task task,
-  }) {
-    final st = ref
-        .read(sharedDataProvider)
-        .sharedTasks
-        .where((s) => s.taskId == task.id)
-        .firstWhere(
-            (s) => true, orElse: () =>
-            SharedTask(
-              id: '',
-              taskId: task.id,
-              fromUserId: '',
-              toUserId: '',
-              timestamp: DateTime.now(),
-            ));
-    final comments = (st.metadata['comments'] as List<dynamic>?)
-            ?.cast<Map<String, dynamic>>() ??
-        [];
-    final controller = TextEditingController();
-    showDialog(
-      context: ctx,
-      builder: (context) => AlertDialog(
-        title: Text('Comments for "${task.title}"'),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 300,
-          child: Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  itemCount: comments.length,
-                  itemBuilder: (_, i) {
-                    final c = comments[i];
-                    final author = dummyUsers.firstWhere(
-                        (u) => u.id == c['authorId'] as String,
-                        orElse: () => dummyUsers.first);
-                    return ListTile(
-                      title: Text(author.name),
-                      subtitle: Text(c['text'] as String),
-                      trailing: Text(DateFormat.jm().format(
-                          DateTime.parse(c['timestamp'] as String))),
-                    );
-                  },
-                ),
+  Widget _buildHorizontalDaySelector(ThemeData theme) {
+    final weekDays = _getCurrentWeekDays();
+    return SizedBox(
+      height: 80,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: weekDays.length,
+        itemBuilder: (context, index) {
+          final day = weekDays[index];
+          final isSelected = day.day == _selectedDay.day &&
+              day.month == _selectedDay.month &&
+              day.year == _selectedDay.year;
+
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedDay = day;
+              });
+            },
+            child: Container(
+              width: 60,
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+              decoration: BoxDecoration(
+                color: isSelected ? theme.colorScheme.primary : Colors.transparent,
+                shape: BoxShape.circle,
               ),
-              TextField(
-                controller: controller,
-                decoration:
-                    const InputDecoration(hintText: 'Add a comment'),
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    DateFormat.E().format(day),
+                    style: theme.textTheme.bodySmall!.copyWith(
+                      color: isSelected ? Colors.white : theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${day.day}',
+                    style: theme.textTheme.bodyLarge!.copyWith(
+                      color: isSelected ? Colors.white : theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Close')),
-          ElevatedButton(
-              onPressed: () {
-                final text = controller.text.trim();
-                if (text.isNotEmpty) {
-                  final user = ref.read(currentUserProvider);
-                  ref.read(sharedDataProvider.notifier).addComment(
-                        sharedTaskId: st.id,
-                        authorId: user.id,
-                        text: text,
-                      );
-                }
-                Navigator.pop(ctx);
-              },
-              child: const Text('Submit')),
-        ],
+            ),
+          );
+        },
       ),
+    );
+  }
+
+  void _showAddTaskDialog() {
+    final titleController = TextEditingController();
+    TimeOfDay selectedTime = TimeOfDay.now();
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx2, setState2) {
+            return AlertDialog(
+              title: const Text('Add New Task'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: titleController,
+                    decoration: const InputDecoration(labelText: 'Task Title'),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Text('Time: ${selectedTime.format(ctx2)}', style: Theme.of(ctx2).textTheme.bodyMedium),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: () async {
+                          final time = await showTimePicker(
+                            context: ctx2,
+                            initialTime: selectedTime,
+                          );
+                          if (time != null) {
+                            setState2(() {
+                              selectedTime = time;
+                            });
+                          }
+                        },
+                        child: const Text('Select'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final title = titleController.text.trim();
+                    if (title.isNotEmpty) {
+                      final dateTime = DateTime(
+                        _selectedDay.year,
+                        _selectedDay.month,
+                        _selectedDay.day,
+                        selectedTime.hour,
+                        selectedTime.minute,
+                      );
+                      final user = ref.read(currentUserProvider);
+                      ref.read(todoListProvider.notifier).add(
+                        title,
+                        date: dateTime,
+                        isRepetitive: false,
+                        ownerId: user.id,
+                      );
+                    }
+                    Navigator.pop(ctx);
+                  },
+                  child: const Text('Add'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

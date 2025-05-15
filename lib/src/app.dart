@@ -18,7 +18,8 @@ import 'features/ai/ai_page.dart';
 import 'features/shared/invitations_page.dart';
 
 import 'models/user.dart';
-/// Notifier holding the current user; replaceable by real auth in future.
+
+// Notifier holding the current user; replaceable by real auth in future.
 class CurrentUserNotifier extends StateNotifier<User> {
   CurrentUserNotifier() : super(dummyUsers.first);
 }
@@ -29,8 +30,6 @@ final currentUserProvider = StateNotifierProvider<CurrentUserNotifier, User>(
 /// Provider for managing the app's theme mode (light/dark/system).
 final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
 
-/// The root widget of TaskPilot.
-// Main application widget
 class TaskPilotApp extends ConsumerWidget {
   const TaskPilotApp({Key? key}) : super(key: key);
 
@@ -53,7 +52,6 @@ class TaskPilotApp extends ConsumerWidget {
   }
 }
 
-/// Main page with bottom navigation.
 class MainPage extends ConsumerStatefulWidget {
   const MainPage({Key? key}) : super(key: key);
 
@@ -100,85 +98,80 @@ class _MainPageState extends ConsumerState<MainPage> {
       drawer: isWeb
           ? null
           : Drawer(
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  // User switcher
-                  DrawerHeader(
-                    decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary),
-                    child: Consumer(
-                      builder: (ctx, ref, _) {
-                        final currentUser = ref.watch(currentUserProvider);
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Signed in as', style: TextStyle(color: Colors.white70)),
-                            const SizedBox(height: 8),
-                            DropdownButton<User>(
-                              value: currentUser,
-                              dropdownColor: Theme.of(context).colorScheme.surface,
-                              items: dummyUsers
-                                  .map((u) => DropdownMenuItem(
-                                        value: u,
-                                        child: Text(u.name),
-                                      ))
-                                  .toList(),
-                              onChanged: (u) {
-                                if (u != null) {
-                                  ref.read(currentUserProvider.notifier).state = u;
-                                }
-                              },
-                              style: TextStyle(
-                                  color: Colors.white, fontSize: 16),
-                              underline: Container(),
-                              iconEnabledColor: Colors.white,
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.bar_chart),
-                    title: const Text('Reports'),
-                    onTap: () {
-                      setState(() => _currentIndex = 4);
-                      Navigator.pop(context);
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.flag),
-                    title: const Text('Goals'),
-                    onTap: () {
-                      setState(() => _currentIndex = 5);
-                      Navigator.pop(context);
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.person),
-                    title: const Text('Profile'),
-                    onTap: () {
-                      setState(() => _currentIndex = 6);
-                      Navigator.pop(context);
-                    },
-                  ),
-                  const Divider(),
-                  ListTile(
-                    leading: const Icon(Icons.mail_outline),
-                    title: const Text('Invitations'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const InvitationsPage(),
-                        ),
-                      );
-                    },
-                  ),
-                ],
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary),
+              child: Consumer(
+                builder: (ctx, ref, _) {
+                  final currentUser = ref.watch(currentUserProvider);
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Signed in as', style: TextStyle(color: Colors.white70)),
+                      const SizedBox(height: 8),
+                      DropdownButton<User>(
+                        value: currentUser,
+                        dropdownColor: Theme.of(context).colorScheme.surface,
+                        items: dummyUsers
+                            .map((u) => DropdownMenuItem(
+                          value: u,
+                          child: Text(u.name),
+                        ))
+                            .toList(),
+                        onChanged: (u) {
+                          if (u != null) {
+                            ref.read(currentUserProvider.notifier).state = u;
+                          }
+                        },
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                        underline: Container(),
+                        iconEnabledColor: Colors.white,
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
+            ListTile(
+              leading: const Icon(Icons.bar_chart),
+              title: const Text('Reports'),
+              onTap: () {
+                setState(() => _currentIndex = 4);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.flag),
+              title: const Text('Goals'),
+              onTap: () {
+                setState(() => _currentIndex = 5);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('Profile'),
+              onTap: () {
+                setState(() => _currentIndex = 6);
+                Navigator.pop(context);
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.mail_outline),
+              title: const Text('Invitations'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const InvitationsPage()),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: KeyedSubtree(
@@ -203,80 +196,73 @@ class _MainPageState extends ConsumerState<MainPage> {
       // Permanent side menu for web with user switcher
       return Row(
         children: [
-          Container(
-            width: 240,
+          Material(
             color: Theme.of(context).colorScheme.background,
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                // User switcher
-                DrawerHeader(
-                  decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary),
-                  child: Consumer(
-                    builder: (ctx, ref, _) {
-                      final currentUser = ref.watch(currentUserProvider);
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Signed in as',
-                              style: TextStyle(color: Colors.white70)),
-                          const SizedBox(height: 8),
-                          DropdownButton<User>(
-                            value: currentUser,
-                            dropdownColor:
-                                Theme.of(context).colorScheme.surface,
-                            items: dummyUsers
-                                .map((u) => DropdownMenuItem(
-                                      value: u,
-                                      child: Text(u.name),
-                                    ))
-                                .toList(),
-                            onChanged: (u) {
-                              if (u != null) {
-                                ref
-                                    .read(currentUserProvider.notifier)
-                                    .state = u;
-                              }
-                            },
-                            style: TextStyle(
-                                color: Colors.white, fontSize: 16),
-                            underline: Container(),
-                            iconEnabledColor: Colors.white,
-                          ),
-                        ],
+            child: SizedBox(
+              width: 240,
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  DrawerHeader(
+                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary),
+                    child: Consumer(
+                      builder: (ctx, ref, _) {
+                        final currentUser = ref.watch(currentUserProvider);
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Signed in as', style: TextStyle(color: Colors.white70)),
+                            const SizedBox(height: 8),
+                            DropdownButton<User>(
+                              value: currentUser,
+                              dropdownColor: Theme.of(context).colorScheme.surface,
+                              items: dummyUsers
+                                  .map((u) => DropdownMenuItem(
+                                value: u,
+                                child: Text(u.name),
+                              ))
+                                  .toList(),
+                              onChanged: (u) {
+                                if (u != null) {
+                                  ref.read(currentUserProvider.notifier).state = u;
+                                }
+                              },
+                              style: TextStyle(color: Colors.white, fontSize: 16),
+                              underline: Container(),
+                              iconEnabledColor: Colors.white,
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.bar_chart),
+                    title: const Text('Reports'),
+                    onTap: () => setState(() => _currentIndex = 4),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.flag),
+                    title: const Text('Goals'),
+                    onTap: () => setState(() => _currentIndex = 5),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.person),
+                    title: const Text('Profile'),
+                    onTap: () => setState(() => _currentIndex = 6),
+                  ),
+                  const Divider(),
+                  ListTile(
+                    leading: const Icon(Icons.mail_outline),
+                    title: const Text('Invitations'),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const InvitationsPage()),
                       );
                     },
                   ),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.bar_chart),
-                  title: const Text('Reports'),
-                  onTap: () => setState(() => _currentIndex = 4),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.flag),
-                  title: const Text('Goals'),
-                  onTap: () => setState(() => _currentIndex = 5),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.person),
-                  title: const Text('Profile'),
-                  onTap: () => setState(() => _currentIndex = 6),
-                ),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.mail_outline),
-                  title: const Text('Invitations'),
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const InvitationsPage(),
-                      ),
-                    );
-                  },
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           Expanded(child: scaffold),
@@ -316,8 +302,13 @@ class ProfilePage extends ConsumerWidget {
             t.date.month == day.month &&
             t.date.day == day.day;
       }).length;
-      if (count >= 3) streak++; else break;
+      if (count >= 3) {
+        streak++;
+      } else {
+        break;
+      }
     }
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(

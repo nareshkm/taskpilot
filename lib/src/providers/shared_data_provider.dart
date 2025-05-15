@@ -61,6 +61,30 @@ class SharedDataNotifier extends StateNotifier<SharedDataState> {
     required String fromUserId,
     required String toUserId,
   }) async {
+    // Prevent duplicate pending requests
+    if (state.shareRequests.any((r) =>
+        r.fromUserId == fromUserId &&
+        r.toUserId == toUserId &&
+        r.status == 'pending')) {
+      // Notify sender that duplicate request is not allowed
+      NotificationService().showSimpleNotification(
+        id: 'duplicate-$fromUserId-$toUserId',
+        title: 'Invite Already Sent',
+        body: 'You have already sent an invite to this user.',
+      );
+      return;
+    }
+    // Prevent inviting existing collaborators
+    if (state.collaborations.any((c) =>
+        (c.user1 == fromUserId && c.user2 == toUserId) ||
+        (c.user1 == toUserId && c.user2 == fromUserId))) {
+      NotificationService().showSimpleNotification(
+        id: 'collaborator-$fromUserId-$toUserId',
+        title: 'Already Collaborating',
+        body: 'You are already collaborating with this user.',
+      );
+      return;
+    }
     final id = DateTime.now().millisecondsSinceEpoch.toString();
     final req = ShareRequest(
       id: id,
