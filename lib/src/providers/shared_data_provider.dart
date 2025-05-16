@@ -215,6 +215,23 @@ class SharedDataNotifier extends StateNotifier<SharedDataState> {
     );
   }
 
+  /// Revoke an existing collaboration by collaboration ID.
+  Future<void> revokeCollaboration(String collaborationId) async {
+    final updatedCollabs = state.collaborations
+        .where((c) => c.id != collaborationId)
+        .toList();
+
+    state = state.copyWith(collaborations: updatedCollabs);
+    await _sync();
+
+    NotificationService().showSimpleNotification(
+      id: collaborationId,
+      title: 'Collaboration Revoked',
+      body: 'You have revoked this collaboration.',
+    );
+  }
+
+
   /// Internal sync to persist state in JSON file.
   Future<void> _sync() async {
     await _service.saveAll(
