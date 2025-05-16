@@ -33,11 +33,11 @@ class _AIPageState extends ConsumerState<AIPage> {
       bool available = await _speech.initialize(
         onStatus: (status) {
           if (status == 'done' || status == 'notListening') {
-            if (mounted) setState(() => _isListening = false);
+            setState(() => _isListening = false);
           }
         },
         onError: (error) {
-          if (mounted) setState(() => _isListening = false);
+          setState(() => _isListening = false);
           print('Speech recognition error: $error');
         },
       );
@@ -46,14 +46,16 @@ class _AIPageState extends ConsumerState<AIPage> {
         setState(() => _isListening = true);
         _speech.listen(
           onResult: (result) {
-            final text = result.recognizedWords.trim();
-            if (mounted) {
-              setState(() => _controller.text = text);
-            }
+            setState(() {
+              _controller.text = result.recognizedWords.trim();
+              _controller.selection = TextSelection.fromPosition(
+                TextPosition(offset: _controller.text.length),
+              );
+            });
           },
           listenMode: stt.ListenMode.dictation,
-          pauseFor: const Duration(seconds: 2),
-          partialResults: true,
+          pauseFor: const Duration(seconds: 10),
+          listenFor: const Duration(seconds: 100),
         );
       }
     } else {
@@ -65,16 +67,21 @@ class _AIPageState extends ConsumerState<AIPage> {
   void _onAddPressed() {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
+
     ref.read(recognizedTextsProvider.notifier).addText(text);
     _controller.clear();
+
+    if (_isListening) {
+      _speech.stop();
+      setState(() => _isListening = false);
+    }
   }
 
   void _confirmTask(String text) {
-    final todoNotifier = ref.read(todoListProvider.notifier);
-    todoNotifier.add(
+    ref.read(todoListProvider.notifier).add(
       text,
       date: DateTime.now(),
-      ownerId: 'system', // Replace with the correct user ID if needed
+      ownerId: 'system', // Replace with real userId if needed
     );
     ref.read(recognizedTextsProvider.notifier).removeText(text);
   }
@@ -92,40 +99,44 @@ class _AIPageState extends ConsumerState<AIPage> {
     final recognizedTexts = ref.watch(recognizedTextsProvider);
     if (recognizedTexts.isEmpty) return const SizedBox.shrink();
 
-    return Column(
-      children: recognizedTexts.map((text) {
-        return Container(
-          margin: const EdgeInsets.only(top: 12),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  text,
-                  style: const TextStyle(fontSize: 16),
+    return Expanded(
+      child: ListView.builder(
+        itemCount: recognizedTexts.length,
+        itemBuilder: (context, index) {
+          final text = recognizedTexts[index];
+          return Container(
+            margin: const EdgeInsets.symmetric(vertical: 6),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    text,
+                    style: const TextStyle(fontSize: 16),
+                  ),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.check_circle, color: Colors.green),
-                onPressed: () => _confirmTask(text),
-              ),
-              IconButton(
-                icon: const Icon(Icons.edit, color: Colors.blue),
-                onPressed: () => _editTask(text),
-              ),
-              IconButton(
-                icon: const Icon(Icons.cancel, color: Colors.red),
-                onPressed: () => _cancelTask(text),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
+                IconButton(
+                  icon: const Icon(Icons.check_circle, color: Colors.green),
+                  onPressed: () => _confirmTask(text),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.blue),
+                  onPressed: () => _editTask(text),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.cancel, color: Colors.red),
+                  onPressed: () => _cancelTask(text),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -137,20 +148,14 @@ class _AIPageState extends ConsumerState<AIPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            SizedBox(
-              height: 100,
-              child: TextField(
-                controller: _controller,
-                maxLines: null,
-                expands: true,
-                decoration: const InputDecoration(
-                  hintText: 'Describe tasks to create...',
-                  border: OutlineInputBorder(),
-                ),
+            TextField(
+              controller: _controller,
+              maxLines: null,
+              decoration: const InputDecoration(
+                hintText: 'Describe tasks to create...',
+                border: OutlineInputBorder(),
               ),
             ),
-            const SizedBox(height: 12),
-            _buildRecognizedWidgets(),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -169,6 +174,8 @@ class _AIPageState extends ConsumerState<AIPage> {
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            _buildRecognizedWidgets(),
           ],
         ),
       ),
