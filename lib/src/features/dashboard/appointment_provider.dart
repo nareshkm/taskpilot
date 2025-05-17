@@ -1,13 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import '../../models/appointment_item.dart';
+import '../../providers/box_providers.dart';
+import '../../providers/auth_provider.dart';
 
 /// StateNotifier for managing appointments with Hive persistence.
 class AppointmentListNotifier extends StateNotifier<List<AppointmentItem>> {
   final Box<AppointmentItem> _box;
-  AppointmentListNotifier()
-      : _box = Hive.box<AppointmentItem>('appointments'),
-        super(Hive.box<AppointmentItem>('appointments').values.toList());
+  final String _ownerId;
+  AppointmentListNotifier(this._box, this._ownerId)
+      : super(_box.values.toList());
 
   /// Add a new appointment with [title], [start], and [end].
   void add(String title, {required DateTime start, required DateTime end}) {
@@ -27,5 +29,8 @@ class AppointmentListNotifier extends StateNotifier<List<AppointmentItem>> {
 /// Provider exposing the list of appointments.
 final appointmentListProvider =
     StateNotifierProvider<AppointmentListNotifier, List<AppointmentItem>>(
-  (ref) => AppointmentListNotifier(),
-);
+        (ref) {
+  final box =   ref.watch(appointmentsBoxProvider);
+  final ownerId = ref.watch(currentUserProvider).id;
+  return AppointmentListNotifier(box, ownerId);
+});

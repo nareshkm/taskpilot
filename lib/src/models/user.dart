@@ -14,6 +14,7 @@ class User {
 
 /// Dummy users for local testing.
 const List<User> dummyUsers = [
+  User(id: '0', name: 'Admin', email: 'admin@example.com'),
   User(id: '1', name: 'Alice', email: 'alice@example.com'),
   User(id: '2', name: 'Bob', email: 'bob@example.com'),
   User(id: '3', name: 'Carol', email: 'carol@example.com'),

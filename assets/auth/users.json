@@ -1,0 +1,27 @@
+[
+  {
+    "email": "admin@example.com",
+    "password": "admin123",
+    "token": "dummy.jwt.token.admin"
+  },
+  {
+    "email": "alice@example.com",
+    "password": "alice123",
+    "token": "dummy.jwt.token.alice"
+  },
+  {
+    "email": "bob@example.com",
+    "password": "bob123",
+    "token": "dummy.jwt.token.bob"
+  },
+  {
+    "email": "carol@example.com",
+    "password": "carol123",
+    "token": "dummy.jwt.token.carol"
+  },
+  {
+    "email": "dave@example.com",
+    "password": "dave123",
+    "token": "dummy.jwt.token.dave"
+  }
+]

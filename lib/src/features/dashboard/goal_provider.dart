@@ -1,13 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import '../../models/goal_item.dart';
+import '../../providers/box_providers.dart';
+import '../../providers/auth_provider.dart';
 
 /// StateNotifier for managing goals with Hive persistence.
 class GoalListNotifier extends StateNotifier<List<GoalItem>> {
   final Box<GoalItem> _box;
-  GoalListNotifier()
-      : _box = Hive.box<GoalItem>('goals'),
-        super(Hive.box<GoalItem>('goals').values.toList());
+  final String _ownerId;
+  GoalListNotifier(this._box, this._ownerId)
+      : super(_box.values.toList());
 
   /// Add a new goal with [title] and [target].
   void add(String title, int target) {
@@ -41,5 +43,10 @@ class GoalListNotifier extends StateNotifier<List<GoalItem>> {
 /// Provider exposing the list of goals.
 final goalListProvider =
     StateNotifierProvider<GoalListNotifier, List<GoalItem>>(
-  (ref) => GoalListNotifier(),
+
+     (ref) {
+          final box =   ref.watch(goalsBoxProvider);
+          final ownerId = ref.watch(currentUserProvider).id;
+          return GoalListNotifier(box, ownerId);
+        }
 );

@@ -1,13 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import '../../models/wellness_item.dart';
+import '../../providers/box_providers.dart';
+import '../../providers/auth_provider.dart';
 
 /// StateNotifier for managing wellness entries with Hive persistence.
 class WellnessListNotifier extends StateNotifier<List<WellnessItem>> {
   final Box<WellnessItem> _box;
-  WellnessListNotifier()
-      : _box = Hive.box<WellnessItem>('wellness'),
-        super(Hive.box<WellnessItem>('wellness').values.toList());
+  final String _ownerId;
+  WellnessListNotifier(this._box, this._ownerId)
+      : super(_box.values.toList());
 
   /// Add or update today's wellness entry.
   void upsert(WellnessItem item) {
@@ -20,5 +22,9 @@ class WellnessListNotifier extends StateNotifier<List<WellnessItem>> {
 /// Provider exposing the list of wellness entries.
 final wellnessListProvider =
     StateNotifierProvider<WellnessListNotifier, List<WellnessItem>>(
-  (ref) => WellnessListNotifier(),
+            (ref) {
+          final box =   ref.watch(wellnessBoxProvider);
+          final ownerId = ref.watch(currentUserProvider).id;
+          return WellnessListNotifier(box, ownerId);
+        }
 );

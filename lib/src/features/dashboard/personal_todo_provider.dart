@@ -1,13 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import '../../models/task.dart';
+import '../../providers/box_providers.dart';
+import '../../providers/auth_provider.dart';
 
 /// StateNotifier managing the personal to-do list with Hive persistence.
 class PersonalTodoListNotifier extends StateNotifier<List<Task>> {
   final Box<Task> _box;
-  PersonalTodoListNotifier()
-      : _box = Hive.box<Task>('personal_todos'),
-        super(Hive.box<Task>('personal_todos').values.toList());
+  final String _ownerId;
+  PersonalTodoListNotifier(this._box, this._ownerId)
+      : super(_box.values.toList());
 
   /// Add a personal task [title] scheduled for [date], owned by [ownerId].
   /// If [isRepetitive] is true, the task appears on every date.
@@ -15,7 +17,6 @@ class PersonalTodoListNotifier extends StateNotifier<List<Task>> {
     String title, {
     required DateTime date,
     bool isRepetitive = false,
-    required String ownerId,
   }) {
     final id = DateTime.now().millisecondsSinceEpoch.toString();
     final task = Task(
@@ -23,7 +24,7 @@ class PersonalTodoListNotifier extends StateNotifier<List<Task>> {
       title: title,
       date: date,
       isRepetitive: isRepetitive,
-      ownerId: ownerId,
+      ownerId: _ownerId,
     );
     _box.put(id, task);
     state = [...state, task];
@@ -60,5 +61,9 @@ class PersonalTodoListNotifier extends StateNotifier<List<Task>> {
 /// Provider exposing the personal to-do list.
 final personalTodoListProvider =
     StateNotifierProvider<PersonalTodoListNotifier, List<Task>>(
-  (ref) => PersonalTodoListNotifier(),
+            (ref) {
+          final box =   ref.watch(personalTodosBoxProvider);
+          final ownerId = ref.watch(currentUserProvider).id;
+          return PersonalTodoListNotifier(box, ownerId);
+        }
 );

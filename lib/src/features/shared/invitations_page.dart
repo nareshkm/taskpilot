@@ -7,6 +7,7 @@ import '../../models/share_request.dart';
 import '../../models/collaboration.dart';
 import '../../providers/shared_data_provider.dart';
 import '../../app.dart';
+import '../../providers/auth_provider.dart';
 
 class InvitationsPage extends ConsumerStatefulWidget {
   const InvitationsPage({Key? key}) : super(key: key);

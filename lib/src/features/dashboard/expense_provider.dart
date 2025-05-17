@@ -1,13 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import '../../models/expense_item.dart';
+import '../../providers/box_providers.dart';
+import '../../providers/auth_provider.dart';
 
 /// StateNotifier for managing expenses with Hive persistence.
 class ExpenseListNotifier extends StateNotifier<List<ExpenseItem>> {
   final Box<ExpenseItem> _box;
-  ExpenseListNotifier()
-      : _box = Hive.box<ExpenseItem>('expenses'),
-        super(Hive.box<ExpenseItem>('expenses').values.toList());
+  final String _ownerId;
+  ExpenseListNotifier(this._box, this._ownerId)
+      : super(_box.values.toList());
 
   /// Add a new expense for [date] with [amount] and [category].
   void add(double amount, String category, {required DateTime date}) {
@@ -32,5 +34,9 @@ class ExpenseListNotifier extends StateNotifier<List<ExpenseItem>> {
 /// Provider exposing the list of expenses.
 final expenseListProvider =
     StateNotifierProvider<ExpenseListNotifier, List<ExpenseItem>>(
-  (ref) => ExpenseListNotifier(),
+  (ref) {
+    final box =   ref.watch(expensesBoxProvider);
+    final ownerId = ref.watch(currentUserProvider).id;
+    return ExpenseListNotifier(box, ownerId);
+  }
 );

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
+import '../../providers/box_providers.dart';
+import '../../providers/auth_provider.dart';
 import '../dashboard/goal_page.dart';
 import '../dashboard/goal_provider.dart';
 import '../dashboard/wellness_provider.dart';
@@ -25,6 +27,19 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Onboarding'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
+            onPressed: () {
+              // Perform logout; root app will rebuild to LoginPage
+              ref.read(authNotifierProvider.notifier).logout();
+            },
+          ),
+        ],
+      ),
       body: Stepper(
         currentStep: _step,
         onStepContinue: _nextStep,
@@ -80,7 +95,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       setState(() => _step++);
     } else {
       // Save onboarding flag
-      final box = Hive.box('settings');
+      final box = ref.read(settingsBoxProvider);
       box.put('seenOnboarding', true);
       // If goal entered, add it
       final goal = _goalController.text.trim();

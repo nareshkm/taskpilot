@@ -1,13 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import '../../models/meal_item.dart';
+import '../../providers/box_providers.dart';
+import '../../providers/auth_provider.dart';
 
 /// StateNotifier managing meal plan entries with Hive persistence.
 class MealPlannerNotifier extends StateNotifier<List<MealItem>> {
   final Box<MealItem> _box;
-  MealPlannerNotifier()
-      : _box = Hive.box<MealItem>('meals'),
-        super(Hive.box<MealItem>('meals').values.toList());
+  final String _ownerId;
+  MealPlannerNotifier(this._box, this._ownerId)
+      : super(_box.values.toList());
 
   /// Add a new meal entry of [type] with [description].
   void add(MealType type, String description) {
@@ -27,5 +29,7 @@ class MealPlannerNotifier extends StateNotifier<List<MealItem>> {
 /// Provider exposing the list of meal entries.
 final mealPlannerProvider =
     StateNotifierProvider<MealPlannerNotifier, List<MealItem>>((ref) {
-  return MealPlannerNotifier();
+      final box =  ref.watch(mealsBoxProvider);
+      final ownerId = ref.watch(currentUserProvider).id;
+      return MealPlannerNotifier(box, ownerId);
 });

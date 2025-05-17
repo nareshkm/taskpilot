@@ -1,15 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 
+import '../../providers/box_providers.dart';
+
 /// StateNotifier for tracking daily water intake count (0-8 cups) with Hive persistence.
 class WaterTrackerNotifier extends StateNotifier<int> {
   final Box _box;
-  WaterTrackerNotifier()
-      : _box = Hive.box('settings'),
-        super(_initCount());
+  WaterTrackerNotifier(this._box) : super(_initCount(_box));
 
-  static int _initCount() {
-    final box = Hive.box('settings');
+  static int _initCount(Box box) {
     return box.get('waterCount', defaultValue: 0) as int;
   }
 
@@ -46,6 +45,7 @@ class WaterTrackerNotifier extends StateNotifier<int> {
 
 /// Provider exposing the current water intake count.
 final waterTrackerProvider =
-    StateNotifierProvider<WaterTrackerNotifier, int>((ref) {
-  return WaterTrackerNotifier();
+StateNotifierProvider<WaterTrackerNotifier, int>((ref) {
+  final box =   ref.watch(waterTrackerBoxProvider);
+  return WaterTrackerNotifier(box);
 });

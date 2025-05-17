@@ -1,13 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import '../../models/communication_item.dart';
+import '../../providers/box_providers.dart';
+import '../../providers/auth_provider.dart';
 
 /// StateNotifier for managing communications (calls/emails/texts) with Hive persistence.
 class CommunicationListNotifier extends StateNotifier<List<CommunicationItem>> {
   final Box<CommunicationItem> _box;
-  CommunicationListNotifier()
-      : _box = Hive.box<CommunicationItem>('communications'),
-        super(Hive.box<CommunicationItem>('communications').values.toList());
+  final String _ownerId;
+  CommunicationListNotifier(this._box, this._ownerId)
+      : super(_box.values.toList());
 
   /// Add a new communication of [type] with [description] scheduled for [date].
   void add(String description,
@@ -57,5 +59,9 @@ class CommunicationListNotifier extends StateNotifier<List<CommunicationItem>> {
 /// Provider exposing the list of communications.
 final communicationListProvider =
     StateNotifierProvider<CommunicationListNotifier, List<CommunicationItem>>(
-  (ref) => CommunicationListNotifier(),
+            (ref) {
+          final box =   ref.watch(communicationsBoxProvider);
+          final ownerId = ref.watch(currentUserProvider).id;
+          return CommunicationListNotifier(box, ownerId);
+        }
 );

@@ -8,6 +8,7 @@ import '../../models/shared_task.dart';
 import '../../models/user.dart';
 import '../../providers/shared_data_provider.dart';
 import '../dashboard/todo_provider.dart';
+import '../../providers/auth_provider.dart';
 
 /// Page showing tasks shared with me and tasks I shared, with search, zebra striping, and actions.
 class SharedPage extends ConsumerStatefulWidget {

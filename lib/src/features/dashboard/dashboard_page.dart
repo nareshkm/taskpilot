@@ -21,7 +21,10 @@ import 'wellness_provider.dart';
 import '../../models/wellness_item.dart';
 import '../../services/notification_service.dart';
 import 'package:hive/hive.dart';
+import '../../providers/box_providers.dart';
 import '../../models/user.dart';
+import '../../providers/auth_provider.dart';
+
 
 /// Dashboard page displaying date picker and top priorities.
 class DashboardPage extends ConsumerStatefulWidget {
@@ -41,8 +44,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   void initState() {
     super.initState();
     // Auto rollover unfinished tasks once per day, scheduled after first frame
-    final box = Hive.box('settings');
-    final lastDateStr = box.get('lastRolloverDate') as String?;
+    final settingsBox = ref.read(settingsBoxProvider);
+    final lastDateStr = settingsBox.get('lastRolloverDate') as String?;
     final today = DateTime.now();
     final todayStr = '${today.year}-${today.month}-${today.day}';
     if (lastDateStr != todayStr) {
@@ -50,7 +53,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         // Carry over unfinished tasks from yesterday
         ref.read(todoListProvider.notifier).carryOverUnfinished(today);
         // Update rollover date
-        box.put('lastRolloverDate', todayStr);
+        settingsBox.put('lastRolloverDate', todayStr);
       });
     }
   }
@@ -567,6 +570,39 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       ),
                     ),
                     IconButton(
+                      icon: const Icon(Icons.edit),
+                      tooltip: 'Edit Task',
+                      onPressed: () {
+                        final controller = TextEditingController(text: task.title);
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Edit Task'),
+                            content: TextField(
+                              controller: controller,
+                              decoration: const InputDecoration(hintText: 'Task description'),
+                            ),
+                            actions: [
+                              TextButton(
+                                  onPressed: () => Navigator.of(ctx).pop(),
+                                  child: const Text('Cancel')),
+                              ElevatedButton(
+                                  onPressed: () {
+                                    final newTitle = controller.text.trim();
+                                    if (newTitle.isNotEmpty) {
+                                      ref
+                                          .read(todoListProvider.notifier)
+                                          .update(task.id, title: newTitle);
+                                    }
+                                    Navigator.of(ctx).pop();
+                                  },
+                                  child: const Text('Save')),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    IconButton(
                       icon: const Icon(Icons.share),
                       tooltip: 'Share Task',
                       onPressed: () {
@@ -660,15 +696,13 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           ElevatedButton(
             onPressed: () {
               final text = controller.text.trim();
-              if (text.isNotEmpty) {
+                if (text.isNotEmpty) {
                 final date = ref.read(selectedDateProvider);
-                // Impersonated user
-                final currentUser = ref.read(currentUserProvider);
                 ref.read(todoListProvider.notifier).add(
                       text,
                       date: date,
                       isRepetitive: false,
-                      ownerId: currentUser.id,
+                      ownerId: ''
                     );
               }
               Navigator.of(context).pop();
@@ -761,7 +795,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       text,
                       date: date,
                       isRepetitive: false,
-                      ownerId: currentUser.id,
                     );
               }
               Navigator.of(context).pop();

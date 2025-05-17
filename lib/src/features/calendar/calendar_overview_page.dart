@@ -8,6 +8,7 @@ import '../../models/user.dart';
 import '../../models/task.dart';
 import '../../providers/shared_data_provider.dart';
 import '../dashboard/todo_provider.dart';
+import '../../providers/auth_provider.dart';
 
 class CalendarOverviewPage extends ConsumerStatefulWidget {
   const CalendarOverviewPage({Key? key}) : super(key: key);

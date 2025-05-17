@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
+import 'providers/auth_provider.dart';
+import 'providers/box_providers.dart';
+import 'features/auth/login_page.dart';
 
 import 'features/dashboard/dashboard_page.dart';
 import 'features/dashboard/todo_provider.dart';
@@ -18,15 +21,7 @@ import 'features/ai/ai_page.dart';
 import 'features/shared/invitations_page.dart';
 
 import 'models/user.dart';
-
-// Notifier holding the current user; replaceable by real auth in future.
-class CurrentUserNotifier extends StateNotifier<User> {
-  CurrentUserNotifier() : super(dummyUsers.first);
-}
-/// Provider for the currently signed-in user (dummy for now).
-final currentUserProvider = StateNotifierProvider<CurrentUserNotifier, User>(
-  (ref) => CurrentUserNotifier(),
-);
+// Note: currentUserProvider moved to providers/auth_provider.dart
 /// Provider for managing the app's theme mode (light/dark/system).
 final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
 
@@ -35,19 +30,26 @@ class TaskPilotApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authNotifierProvider);
     final themeMode = ref.watch(themeModeProvider);
     return MaterialApp(
+      key: ValueKey(authState.isAuthenticated),
       title: 'TaskPilot',
       theme: slackLightTheme,
       darkTheme: slackDarkTheme,
       themeMode: themeMode,
-      home: _buildHome(),
+      home: authState.isLoading
+          ? const Scaffold(body: Center(child: CircularProgressIndicator()))
+          : authState.isAuthenticated
+              ? _buildHome(ref)
+              : const LoginPage(),
     );
   }
   
   /// Selects the home page based on whether onboarding has been seen.
-  Widget _buildHome() {
-    final seen = Hive.box('settings').get('seenOnboarding', defaultValue: false) as bool;
+  Widget _buildHome(WidgetRef ref) {
+    final settingsBox =  ref.watch(settingsBoxProvider);
+    final seen = settingsBox.get('seenOnboarding', defaultValue: false) as bool;
     return seen ? const MainPage() : const OnboardingPage();
   }
 }
@@ -93,6 +95,14 @@ class _MainPageState extends ConsumerState<MainPage> {
                   current == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
             },
           ),
+          // Logout button
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
+            onPressed: () {
+              ref.read(authNotifierProvider.notifier).logout();
+            },
+          ),
         ],
       ),
       drawer: isWeb
@@ -106,29 +116,31 @@ class _MainPageState extends ConsumerState<MainPage> {
               child: Consumer(
                 builder: (ctx, ref, _) {
                   final currentUser = ref.watch(currentUserProvider);
+                  final isAdmin = currentUser.email == 'admin@example.com';
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Signed in as', style: TextStyle(color: Colors.white70)),
                       const SizedBox(height: 8),
-                      DropdownButton<User>(
-                        value: currentUser,
-                        dropdownColor: Theme.of(context).colorScheme.surface,
-                        items: dummyUsers
-                            .map((u) => DropdownMenuItem(
-                          value: u,
-                          child: Text(u.name),
-                        ))
-                            .toList(),
-                        onChanged: (u) {
-                          if (u != null) {
-                            ref.read(currentUserProvider.notifier).state = u;
-                          }
-                        },
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                        underline: Container(),
-                        iconEnabledColor: Colors.white,
+                      Text(
+                        currentUser.name,
+                        style: const TextStyle(color: Colors.white, fontSize: 16),
                       ),
+                      if (isAdmin) ...[
+                        const SizedBox(height: 16),
+                        PopupMenuButton<User>(
+                          icon: const Icon(Icons.switch_account, color: Colors.white),
+                          tooltip: 'Impersonate User',
+                          onSelected: (u) =>
+                              ref.read(currentUserProvider.notifier).state = u,
+                          itemBuilder: (_) => dummyUsers
+                              .map((u) => PopupMenuItem<User>(
+                                    value: u,
+                                    child: Text(u.name),
+                                  ))
+                              .toList(),
+                        ),
+                      ],
                     ],
                   );
                 },
@@ -208,29 +220,31 @@ class _MainPageState extends ConsumerState<MainPage> {
                     child: Consumer(
                       builder: (ctx, ref, _) {
                         final currentUser = ref.watch(currentUserProvider);
+                        final isAdmin = currentUser.email == 'admin@example.com';
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text('Signed in as', style: TextStyle(color: Colors.white70)),
                             const SizedBox(height: 8),
-                            DropdownButton<User>(
-                              value: currentUser,
-                              dropdownColor: Theme.of(context).colorScheme.surface,
-                              items: dummyUsers
-                                  .map((u) => DropdownMenuItem(
-                                value: u,
-                                child: Text(u.name),
-                              ))
-                                  .toList(),
-                              onChanged: (u) {
-                                if (u != null) {
-                                  ref.read(currentUserProvider.notifier).state = u;
-                                }
-                              },
-                              style: TextStyle(color: Colors.white, fontSize: 16),
-                              underline: Container(),
-                              iconEnabledColor: Colors.white,
+                            Text(
+                              currentUser.name,
+                              style: const TextStyle(color: Colors.white, fontSize: 16),
                             ),
+                        if (isAdmin) ...[
+                          const SizedBox(height: 16),
+                          PopupMenuButton<User>(
+                            icon: const Icon(Icons.switch_account, color: Colors.white),
+                            tooltip: 'Impersonate User',
+                            onSelected: (u) =>
+                                ref.read(currentUserProvider.notifier).state = u,
+                            itemBuilder: (_) => dummyUsers
+                                .map((u) => PopupMenuItem<User>(
+                                      value: u,
+                                      child: Text(u.name),
+                                    ))
+                                .toList(),
+                          ),
+                        ],
                           ],
                         );
                       },

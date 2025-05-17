@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
- import 'package:hive/hive.dart';
+import 'package:hive/hive.dart';
 import '../../services/notification_service.dart';
 import '../../models/task.dart';
+import '../../providers/box_providers.dart';
+import '../../providers/auth_provider.dart';
 
 /// Provider for the currently selected date on the dashboard.
 final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
@@ -9,9 +11,9 @@ final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
 /// StateNotifier managing the top priorities list with Hive persistence.
 class TopPrioritiesNotifier extends StateNotifier<List<Task>> {
   final Box<Task> _box;
-  TopPrioritiesNotifier()
-      : _box = Hive.box<Task>('priorities'),
-        super(Hive.box<Task>('priorities').values.toList());
+  final String _ownerId;
+  TopPrioritiesNotifier(this._box, this._ownerId)
+      : super(_box.values.toList());
 
   /// Add a new priority task with [title], scheduled for [date], owned by [ownerId].
   /// If [isRepetitive] is true, the task appears on every date.
@@ -27,7 +29,7 @@ class TopPrioritiesNotifier extends StateNotifier<List<Task>> {
       title: title,
       date: date,
       isRepetitive: isRepetitive,
-      ownerId: ownerId,
+      ownerId: _ownerId,
     );
     _box.put(id, task);
     state = [...state, task];
@@ -68,5 +70,9 @@ class TopPrioritiesNotifier extends StateNotifier<List<Task>> {
 /// Provider exposing the list of top priorities.
 final topPrioritiesProvider =
     StateNotifierProvider<TopPrioritiesNotifier, List<Task>>(
-  (ref) => TopPrioritiesNotifier(),
+  (ref) {
+    final box =  ref.watch(prioritiesBoxProvider);
+    final ownerId = ref.watch(currentUserProvider).id;
+    return TopPrioritiesNotifier(box, ownerId);
+  }
 );
